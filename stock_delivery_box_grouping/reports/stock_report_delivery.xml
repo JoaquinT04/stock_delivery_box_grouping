@@ -1,0 +1,259 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="report_delivery_document_box_grouping" inherit_id="stock.report_delivery_document" priority="99">
+        <!-- FIX 1: Ocultar la tabla superior estándar que sale cuando el estado NO es done.
+             Lo hacemos forzando t-if="False" para que nunca se renderice. -->
+        <xpath expr="//table[@name='stock_move_table']" position="attributes">
+            <attribute name="t-if">False</attribute>
+        </xpath>
+
+        <!-- Reemplazamos la tabla de líneas detalladas -->
+        <xpath expr="//table[@name='stock_move_line_table']" position="replace">
+            
+            <!-- DATOS -->
+            <t t-set="all_lines" t-value="o.move_line_ids"/>
+
+            <!-- LÓGICA DE AGRUPACIÓN INTELIGENTE 
+                 Creamos un diccionario o lista auxiliar para saber la caja de cada línea.
+                 Prioridad: 1. stock.move.line (Detalle) -> 2. stock.move (Operación)
+            -->
+            <t t-set="lines_with_box" t-value="[]"/>
+            <t t-foreach="all_lines" t-as="l">
+                <!-- Calculamos la caja efectiva -->
+                <t t-set="eff_box" t-value="str(l.x_studio_caja or l.move_id.x_studio_caja or '')"/>
+                <!-- Agregamos a una lista temporal solo si tiene caja -->
+                <t t-if="eff_box">
+                    <t t-set="lines_with_box" t-value="lines_with_box + [{'line': l, 'box': eff_box}]"/>
+                </t>
+            </t>
+
+            <!-- Obtenemos cajas únicas desde nuestra lista calculada -->
+            <t t-set="unique_boxes" t-value="list(set(item['box'] for item in lines_with_box))"/>
+            <t t-set="unique_boxes" t-value="sorted(unique_boxes, key=lambda x: int(x) if x.isdigit() else x)"/>
+
+            <!-- ============================================== -->
+            <!-- 1. BLOQUE AGRUPADO -->
+            <!-- ============================================== -->
+            <t t-foreach="unique_boxes" t-as="box">
+                <div class="mt-2 mb-2" style="page-break-inside: avoid;">
+                    
+                    <div style="background-color: #e9ecef; padding: 5px 10px; border: 1px solid #dee2e6; border-bottom: none;">
+                        <h5 class="m-0 font-weight-bold text-uppercase">
+                            <span class="fa fa-box"/> CAJA - <t t-esc="box"/>
+                        </h5>
+                    </div>
+
+                    <table class="table table-sm table-bordered" style="border: 1px solid #dee2e6;">
+                        <thead style="background-color: #f8f9fa;">
+                            <tr>
+                                <th width="20%" style="padding-left: 10px;"><strong>Código</strong></th>
+                                <th width="60%"><strong>Descripción</strong></th>
+                                <th width="20%" class="text-end" style="padding-right: 10px;"><strong>Cantidad</strong></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Iteramos sobre nuestra lista calculada filtrando por caja -->
+                            <t t-foreach="lines_with_box" t-as="item">
+                                <t t-if="item['box'] == box">
+                                    <t t-set="move_line" t-value="item['line']"/>
+                                    <tr>
+                                        <td style="padding-left: 10px;">
+                                            <span t-field="move_line.product_id.default_code"/>
+                                        </td>
+                                        <td>
+                                            <span t-field="move_line.product_id.name"/>
+                                            <t t-if="move_line.lot_id">
+                                                <br/><small>Lote: <span t-field="move_line.lot_id.name"/></small>
+                                            </t>
+                                        </td>
+                                        <td class="text-end" style="padding-right: 10px;">
+                                            <t t-if="o.state == 'done'">
+                                                <span t-field="move_line.qty_done"/>
+                                            </t>
+                                            <t t-else="">
+                                                <span t-field="move_line.quantity"/>
+                                            </t>
+                                            <span t-field="move_line.product_uom_id"/>
+                                        </td>
+                                    </tr>
+                                </t>
+                            </t>
+                        </tbody>
+                    </table>
+                </div>
+            </t>
+
+            <!-- ============================================== -->
+            <!-- 2. BLOQUE SUELTOS (Sin Caja ni en Linea ni en Move) -->
+            <!-- ============================================== -->
+            <t t-set="lines_no_box" t-value="all_lines.filtered(lambda l: not l.x_studio_caja and not l.move_id.x_studio_caja)"/>
+            
+            <t t-if="lines_no_box and any(l.quantity > 0 for l in lines_no_box)">
+                <div class="mt-4 mb-2" style="page-break-inside: avoid;">
+                    <div style="background-color: #fff3cd; padding: 5px 10px; border: 1px solid #ffeeba; border-bottom: none; color: #856404;">
+                        <h6 class="m-0 font-weight-bold">
+                            <span class="fa fa-exclamation-circle"/> SIN AGRUPAR / SUELTOS
+                        </h6>
+                    </div>
+                    <table class="table table-sm table-bordered">
+                        <thead>
+                            <tr>
+                                <th width="20%"><strong>Código</strong></th>
+                                <th width="60%"><strong>Descripción</strong></th>
+                                <th width="20%" class="text-end"><strong>Cantidad</strong></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr t-foreach="lines_no_box" t-as="move_line">
+                                <td><span t-field="move_line.product_id.default_code"/></td>
+                                <td>
+                                    <span t-field="move_line.product_id.name"/>
+                                    <t t-if="move_line.lot_id">
+                                        <br/><small>Lote: <span t-field="move_line.lot_id.name"/></small>
+                                    </t>
+                                </td>
+                                <td class="text-end">
+                                    <t t-if="o.state == 'done'">
+                                        <span t-field="move_line.qty_done"/>
+                                    </t>
+                                    <t t-else="">
+                                        <span t-field="move_line.quantity"/>
+                                    </t>
+                                    <span t-field="move_line.product_uom_id"/>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </t>
+
+        </xpath><!-- FIX 1: Ocultar la tabla superior estándar que sale cuando el estado NO es done.
+             Lo hacemos forzando t-if="False" para que nunca se renderice. -->
+        <xpath expr="//table[@name='stock_move_table']" position="attributes">
+            <attribute name="t-if">False</attribute>
+        </xpath>
+
+        <!-- Reemplazamos la tabla de líneas detalladas -->
+        <xpath expr="//table[@name='stock_move_line_table']" position="replace">
+            
+            <!-- DATOS -->
+            <t t-set="all_lines" t-value="o.move_line_ids"/>
+
+            <!-- LÓGICA DE AGRUPACIÓN INTELIGENTE 
+                 Creamos un diccionario o lista auxiliar para saber la caja de cada línea.
+                 Prioridad: 1. stock.move.line (Detalle) -> 2. stock.move (Operación)
+            -->
+            <t t-set="lines_with_box" t-value="[]"/>
+            <t t-foreach="all_lines" t-as="l">
+                <!-- Calculamos la caja efectiva -->
+                <t t-set="eff_box" t-value="str(l.x_studio_caja or l.move_id.x_studio_caja or '')"/>
+                <!-- Agregamos a una lista temporal solo si tiene caja -->
+                <t t-if="eff_box">
+                    <t t-set="lines_with_box" t-value="lines_with_box + [{'line': l, 'box': eff_box}]"/>
+                </t>
+            </t>
+
+            <!-- Obtenemos cajas únicas desde nuestra lista calculada -->
+            <t t-set="unique_boxes" t-value="list(set(item['box'] for item in lines_with_box))"/>
+            <t t-set="unique_boxes" t-value="sorted(unique_boxes, key=lambda x: int(x) if x.isdigit() else x)"/>
+
+            <!-- ============================================== -->
+            <!-- 1. BLOQUE AGRUPADO -->
+            <!-- ============================================== -->
+            <t t-foreach="unique_boxes" t-as="box">
+                <div class="mt-2 mb-2" style="page-break-inside: avoid;">
+                    
+                    <div style="background-color: #e9ecef; padding: 5px 10px; border: 1px solid #dee2e6; border-bottom: none;">
+                        <h5 class="m-0 font-weight-bold text-uppercase">
+                            <span class="fa fa-box"/> CAJA - <t t-esc="box"/>
+                        </h5>
+                    </div>
+
+                    <table class="table table-sm table-bordered" style="border: 1px solid #dee2e6;">
+                        <thead style="background-color: #f8f9fa;">
+                            <tr>
+                                <th width="20%" style="padding-left: 10px;"><strong>Código</strong></th>
+                                <th width="60%"><strong>Descripción</strong></th>
+                                <th width="20%" class="text-end" style="padding-right: 10px;"><strong>Cantidad</strong></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Iteramos sobre nuestra lista calculada filtrando por caja -->
+                            <t t-foreach="lines_with_box" t-as="item">
+                                <t t-if="item['box'] == box">
+                                    <t t-set="move_line" t-value="item['line']"/>
+                                    <tr>
+                                        <td style="padding-left: 10px;">
+                                            <span t-field="move_line.product_id.default_code"/>
+                                        </td>
+                                        <td>
+                                            <span t-field="move_line.product_id.name"/>
+                                            <t t-if="move_line.lot_id">
+                                                <br/><small>Lote: <span t-field="move_line.lot_id.name"/></small>
+                                            </t>
+                                        </td>
+                                        <td class="text-end" style="padding-right: 10px;">
+                                            <t t-if="o.state == 'done'">
+                                                <span t-field="move_line.qty_done"/>
+                                            </t>
+                                            <t t-else="">
+                                                <span t-field="move_line.quantity"/>
+                                            </t>
+                                            <span t-field="move_line.product_uom_id"/>
+                                        </td>
+                                    </tr>
+                                </t>
+                            </t>
+                        </tbody>
+                    </table>
+                </div>
+            </t>
+
+            <!-- ============================================== -->
+            <!-- 2. BLOQUE SUELTOS (Sin Caja ni en Linea ni en Move) -->
+            <!-- ============================================== -->
+            <t t-set="lines_no_box" t-value="all_lines.filtered(lambda l: not l.x_studio_caja and not l.move_id.x_studio_caja)"/>
+            
+            <t t-if="lines_no_box and any(l.quantity > 0 for l in lines_no_box)">
+                <div class="mt-4 mb-2" style="page-break-inside: avoid;">
+                    <div style="background-color: #fff3cd; padding: 5px 10px; border: 1px solid #ffeeba; border-bottom: none; color: #856404;">
+                        <h6 class="m-0 font-weight-bold">
+                            <span class="fa fa-exclamation-circle"/> SIN AGRUPAR / SUELTOS
+                        </h6>
+                    </div>
+                    <table class="table table-sm table-bordered">
+                        <thead>
+                            <tr>
+                                <th width="20%"><strong>Código</strong></th>
+                                <th width="60%"><strong>Descripción</strong></th>
+                                <th width="20%" class="text-end"><strong>Cantidad</strong></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr t-foreach="lines_no_box" t-as="move_line">
+                                <td><span t-field="move_line.product_id.default_code"/></td>
+                                <td>
+                                    <span t-field="move_line.product_id.name"/>
+                                    <t t-if="move_line.lot_id">
+                                        <br/><small>Lote: <span t-field="move_line.lot_id.name"/></small>
+                                    </t>
+                                </td>
+                                <td class="text-end">
+                                    <t t-if="o.state == 'done'">
+                                        <span t-field="move_line.qty_done"/>
+                                    </t>
+                                    <t t-else="">
+                                        <span t-field="move_line.quantity"/>
+                                    </t>
+                                    <span t-field="move_line.product_uom_id"/>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </t>
+
+        </xpath>
+
+    </template>
+</odoo>
