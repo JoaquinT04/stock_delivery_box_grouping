@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Acción del Reporte -->
+    <record id="action_report_label_dispatch_box" model="ir.actions.report">
+        <field name="name">Etiquetas de Despacho (Por Caja)</field>
+        <field name="model">stock.picking</field>
+        <field name="report_type">qweb-pdf</field>
+        <!-- RECUERDA: Ajusta el nombre del módulo si tu carpeta se llama distinto -->
+        <field name="report_name">stock_delivery_box_grouping_module.report_label_dispatch_template</field>
+        <field name="report_file">stock_delivery_box_grouping_module.report_label_dispatch_template</field>
+        <field name="paperformat_id" ref="paperformat_label_dispatch_custom"/>
+        <field name="binding_model_id" ref="stock.model_stock_picking"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <!-- Plantilla Visual -->
+    <template id="report_label_dispatch_template">
+        <t t-call="web.basic_layout">
+            <t t-foreach="docs" t-as="o">
+                
+                <!-- === PREPARACIÓN DE DATOS === -->
+                <t t-set="all_lines" t-value="o.move_line_ids"/>
+                <t t-set="lines_with_box" t-value="[]"/>
+                <t t-foreach="all_lines" t-as="l">
+                    <t t-set="eff_box" t-value="str(l.x_studio_caja or l.move_id.x_studio_caja or '')"/>
+                    <t t-if="eff_box">
+                        <t t-set="lines_with_box" t-value="lines_with_box + [{'line': l, 'box': eff_box}]"/>
+                    </t>
+                </t>
+                <t t-set="unique_boxes" t-value="list(set(item['box'] for item in lines_with_box))"/>
+                <t t-set="unique_boxes" t-value="sorted(unique_boxes, key=lambda x: int(x) if x.isdigit() else x)"/>
+
+                <t t-if="not unique_boxes">
+                    <div class="page text-center"><h2>Sin Cajas Asignadas</h2></div>
+                </t>
+
+                <!-- === BUCLE POR CAJA === -->
+                <t t-foreach="unique_boxes" t-as="box">
+                    <t t-set="box_items" t-value="[item for item in lines_with_box if item['box'] == box]"/>
+
+                    <!-- 
+                        CONTENEDOR DE PÁGINA: 
+                        Usamos height: 99vh para ocupar casi toda la altura vertical disponible del papel.
+                        font-size base relativo para escalar mejor.
+                    -->
+                    <div class="page" style="page-break-after: always; width: 100%; height: 99vh; font-family: Helvetica, Arial, sans-serif; box-sizing: border-box; padding: 2px;">
+                        
+                        <!-- TABLA MAESTRA DE DISEÑO 
+                             border-collapse: collapse para que los bordes se vean nítidos.
+                             height: 100% para estirarse hasta el borde de abajo.
+                        -->
+                        <table style="width: 100%; height: 100%; border: 2px solid black; border-collapse: collapse;">
+                            
+                            <!-- 1. ENCABEZADO (Aprox 30% del alto) -->
+                            <tr style="height: 30%;">
+                                <!-- Celda Izq: Datos Empresa -->
+                                <td style="width: 40%; border-right: 2px solid black; border-bottom: 2px solid black; padding: 5px; vertical-align: top; font-size: 11px; line-height: 1.3;">
+                                    <strong><span t-field="o.company_id.name"/></strong><br/>
+                                    <span t-field="o.company_id.street"/><br/>
+                                    <span t-field="o.company_id.city"/> - <span t-field="o.company_id.state_id.name"/><br/>
+                                    <t t-if="o.company_id.phone">Tel: <span t-field="o.company_id.phone"/></t>
+                                </td>
+                                <!-- Celda Der: Cliente (Centrado) -->
+                                <td style="width: 60%; border-bottom: 2px solid black; text-align: center; vertical-align: middle; padding: 5px; background-color: #fafafa;">
+                                    <!-- Usamos un div para limitar el ancho y evitar desbordes -->
+                                    <div style="max-height: 100%; overflow: hidden;">
+                                        <h2 style="margin: 0; padding: 0; font-weight: bold; font-size: 22px; text-transform: uppercase;">
+                                            <span t-field="o.partner_id.display_name"/>
+                                        </h2>
+                                    </div>
+                                </td>
+                            </tr>
+
+                            <!-- 2. DIRECCIÓN (Tira estrecha, height auto) -->
+                            <tr style="height: 1px;"> <!-- height: 1px fuerza a que ocupe lo mínimo necesario -->
+                                <td colspan="2" style="border-bottom: 2px solid black; background-color: #eee; padding: 4px 5px; font-size: 11px; vertical-align: middle; white-space: nowrap; overflow: hidden;">
+                                    <strong>Destino:</strong> 
+                                    <span t-field="o.partner_id.street"/>, 
+                                    <span t-field="o.partner_id.city"/>
+                                </td>
+                            </tr>
+
+                            <!-- 3. NÚMERO DE CAJA (La parte más importante, 30% del alto) -->
+                            <tr style="height: 30%;">
+                                <td colspan="2" style="border-bottom: 2px solid black; padding: 0;">
+                                    <table style="width: 100%; height: 100%;">
+                                        <tr>
+                                            <!-- Número Gigante -->
+                                            <td style="width: 70%; text-align: center; vertical-align: middle;">
+                                                <span style="font-size: 24px; font-weight: bold;">CAJA :</span>
+                                                <!-- Font size muy grande para que se vea de lejos -->
+                                                <span style="font-size: 70px; font-weight: 900; margin-left: 10px; line-height: 1;">
+                                                    <t t-esc="box"/>
+                                                </span>
+                                            </td>
+                                            <!-- Referencia OC -->
+                                            <td style="width: 30%; text-align: right; padding-right: 15px; vertical-align: middle;">
+                                                <div style="font-size: 12px; font-weight: bold; color: #555;">REF / OC</div>
+                                                <div style="font-size: 16px; font-weight: bold;"><span t-field="o.origin"/></div>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+
+                            <!-- 4. LISTA DE PRODUCTOS (Ocupa todo el espacio restante) -->
+                            <tr>
+                                <td colspan="2" style="vertical-align: top; padding: 0;">
+                                    <div style="height: 100%; width: 100%; overflow: hidden;">
+                                        <table style="width: 100%; border-collapse: collapse; font-size: 10px;">
+                                            <thead>
+                                                <tr style="background-color: #f0f0f0;">
+                                                    <th style="border-right: 1px solid #999; border-bottom: 1px solid black; width: 35%; padding: 2px 4px;">Artículo</th>
+                                                    <th style="border-right: 1px solid black; border-bottom: 1px solid black; width: 15%; padding: 2px; text-align: center;">Cant.</th>
+                                                    <th style="border-right: 1px solid #999; border-bottom: 1px solid black; width: 35%; padding: 2px 4px;">Artículo</th>
+                                                    <th style="border-bottom: 1px solid black; width: 15%; padding: 2px; text-align: center;">Cant.</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <t t-foreach="range(0, len(box_items), 2)" t-as="i">
+                                                    <tr>
+                                                        <!-- COLUMNA 1 -->
+                                                        <t t-set="item1" t-value="box_items[i]"/>
+                                                        <t t-set="line1" t-value="item1['line']"/>
+                                                        <td style="border-right: 1px solid #ccc; border-bottom: 1px solid #eee; padding: 2px 4px;">
+                                                            <span t-field="line1.product_id.default_code" style="font-weight: bold;"/> 
+                                                        </td>
+                                                        <td style="border-right: 1px solid black; border-bottom: 1px solid #eee; text-align: center; padding: 2px;">
+                                                            <span t-esc="line1.qty_done if o.state == 'done' else line1.quantity" t-options='{"widget": "float", "precision": 0}'/>
+                                                        </td>
+
+                                                        <!-- COLUMNA 2 -->
+                                                        <t t-if="i+1 &lt; len(box_items)">
+                                                            <t t-set="item2" t-value="box_items[i+1]"/>
+                                                            <t t-set="line2" t-value="item2['line']"/>
+                                                            <td style="border-right: 1px solid #ccc; border-bottom: 1px solid #eee; padding: 2px 4px;">
+                                                                <span t-field="line2.product_id.default_code" style="font-weight: bold;"/>
+                                                            </td>
+                                                            <td style="border-bottom: 1px solid #eee; text-align: center; padding: 2px;">
+                                                                <span t-esc="line2.qty_done if o.state == 'done' else line2.quantity" t-options='{"widget": "float", "precision": 0}'/>
+                                                            </td>
+                                                        </t>
+                                                        <t t-else="">
+                                                            <td colspan="2"></td>
+                                                        </t>
+                                                    </tr>
+                                                </t>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>

@@ -1,29 +1,27 @@
 # -*- coding: utf-8 -*-
 {
     'name': "Agrupación por Cajas en Entrega (Adhoc Compatible)",
-    'summary': "Agrupa líneas de remito por número de caja (Estilo Reporte Cliente).",
+    'summary': "Remitos agrupados y Etiquetas de Despacho por Caja.",
     'description': """
         Requerimiento Personalizado:
-        1. Mapea campo 'x_studio_caja' en stock.move y stock.move.line.
-        2. Modifica el Reporte de Remito (Delivery Slip) para agrupar por cajas.
-        3. Lógica inteligente: Si no hay caja en el detalle, toma la del movimiento padre.
-        
-        Compatible con: Odoo 18 Enterprise, l10n_ar_stock y stock_ux.
+        1. Agrupación en Remitos.
+        2. Etiquetas de Despacho por Caja.
     """,
-    'author': "Tu Empresa / Desarrollador Odoo",
+    'author': "Tu Nombre / Empresa",
     'website': "https://tusitio.com",
     'category': 'Inventory/Delivery',
-    'version': '18.0.1.0.2',
+    'version': '18.0.1.0.3',
     'license': 'OPL-1',
     'depends': [
         'stock', 
         'stock_delivery', 
-        'l10n_ar_stock',  # Dependencia clave para heredar sobre la localización
-        'stock_ux'        # Dependencia clave de Adhoc
+        'l10n_ar_stock', 
+        'stock_ux'
     ],
     'data': [
-        'views/stock_move_line_views.xml',
+        'reports/paper_formats.xml',       
         'reports/stock_report_delivery.xml',
+        'reports/stock_label_dispatch.xml', 
     ],
     'installable': True,
     'application': False,
