@@ -1,17 +1,15 @@
 # -*- coding: utf-8 -*-
-import logging
-from odoo import models, fields, api
-
-_logger = logging.getLogger(__name__)
+from odoo import models, fields
 
 class StockMoveLine(models.Model):
     _inherit = 'stock.move.line'
 
-    # Definimos el campo con el nombre técnico que usaba Studio.
-    x_studio_caja = fields.Char(
+    box_number = fields.Integer(
         string='Nro. Caja',
-        index=True,
-        copy=False,
-        help="Identificador manual de la caja (Migrado de Studio a Código)."
+        # La magia: hereda del padre (move_id), se guarda en BD, pero es editable.
+        related='move_id.box_number',
+        store=True,
+        readonly=False,
+        group_operator='max', # Para que no sume los números de caja en las vistas pivot
+        help="Hereda del movimiento, pero puede ser modificado específicamente para esta línea."
     )
-

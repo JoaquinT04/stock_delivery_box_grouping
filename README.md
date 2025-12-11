@@ -9,10 +9,10 @@ El objetivo es reemplazar la lista plana de productos por una estructura dividid
 ## 🛠️ Implementación Técnica (Lo que se hizo)
 
 ### 1. Migración de Campo Studio a Código
-Se detectó que existía un campo creado con Odoo Studio (`x_studio_caja`). Para garantizar robustez y trazabilidad, se definió este campo explícitamente en el código Python, manteniendo el nombre técnico para preservar los datos existentes.
+Se detectó que existía un campo creado con Odoo Studio (`box_number`). Para garantizar robustez y trazabilidad, se definió este campo explícitamente en el código Python, manteniendo el nombre técnico para preservar los datos existentes.
 
-*   **Modelo `stock.move` (Pestaña Operaciones):** Se agregó `x_studio_caja`.
-*   **Modelo `stock.move.line` (Pestaña Operaciones Detalladas):** Se agregó `x_studio_caja`.
+*   **Modelo `stock.move` (Pestaña Operaciones):** Se agregó `box_number`.
+*   **Modelo `stock.move.line` (Pestaña Operaciones Detalladas):** Se agregó `box_number`.
 
 ### 2. Lógica de Reporte "Inteligente"
 El reporte estándar itera sobre las líneas de movimiento (`stock.move.line`). Sin embargo, en el flujo operativo normal, el usuario suele asignar la caja en la vista general (`stock.move`).

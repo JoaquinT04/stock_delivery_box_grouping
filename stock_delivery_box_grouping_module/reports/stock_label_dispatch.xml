@@ -3,7 +3,7 @@
 
     <!-- Acción del Reporte -->
     <record id="action_report_label_dispatch_box" model="ir.actions.report">
-        <field name="name">Etiquetas de Despacho (Por Caja)</field>
+        <field name="name">Etiqueta de despacho por caja</field>
         <field name="model">stock.picking</field>
         <field name="report_type">qweb-pdf</field>
         <!-- RECUERDA: Ajusta el nombre del módulo si tu carpeta se llama distinto -->
@@ -23,7 +23,7 @@
                 <t t-set="all_lines" t-value="o.move_line_ids"/>
                 <t t-set="lines_with_box" t-value="[]"/>
                 <t t-foreach="all_lines" t-as="l">
-                    <t t-set="eff_box" t-value="str(l.x_studio_caja or l.move_id.x_studio_caja or '')"/>
+                    <t t-set="eff_box" t-value="str(l.box_number or l.move_id.box_number or '')"/>
                     <t t-if="eff_box">
                         <t t-set="lines_with_box" t-value="lines_with_box + [{'line': l, 'box': eff_box}]"/>
                     </t>

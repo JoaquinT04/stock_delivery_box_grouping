@@ -19,9 +19,10 @@
         'stock_ux'
     ],
     'data': [
-        'reports/paper_formats.xml',       
-        'reports/stock_report_delivery.xml',
-        'reports/stock_label_dispatch.xml', 
+        'views/stock_picking_views.xml', # Renombrado o nuevo
+        'reports/paper_formats.xml',
+        'reports/stock_label_dispatch.xml',
+        'reports/stock_delivery_by_box.xml',
     ],
     'installable': True,
     'application': False,

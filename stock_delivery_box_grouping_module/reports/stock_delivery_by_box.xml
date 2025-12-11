@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ACCIÓN DEL REPORTE -->
+    <record id="action_report_delivery_by_box" model="ir.actions.report">
+        <field name="name">Lista de empaque</field>
+        <field name="model">stock.picking</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">stock_delivery_box_grouping_module.report_delivery_by_box</field>
+        <field name="report_file">stock_delivery_box_grouping_module.report_delivery_by_box</field>
+        <field name="print_report_name">'Lista De Empaque'</field>
+        <field name="binding_model_id" ref="stock.model_stock_picking"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <!-- PLANTILLA DEL REPORTE -->
+    <template id="report_delivery_by_box">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <t t-call="web.external_layout">
+                    
+                    <!-- 1. ANULAMOS LOS BLOQUES ESTÁNDAR DE ODOO -->
+                    <t t-set="address" t-value="False"/>
+                    <t t-set="information_block" t-value="False"/>
+
+                    <div class="page">
+                        
+                        <!-- CONFIGURACIÓN DE COLORES -->
+                        <t t-set="p_color" t-value="o.company_id.primary_color or '#005fa8'"/>
+                        <t t-set="s_color" t-value="o.company_id.secondary_color or '#e9ecef'"/>
+
+                        <!-- ======================================================= -->
+                        <!-- 2. GRAN CAJA DE INFORMACIÓN                             -->
+                        <!-- ======================================================= -->
+                        <div class="row mb-4 mt-2" t-attf-style="padding: 15px 10px; margin: 0px 1px;">
+                            
+                            <div id="informations" class="row mt32 mb32">
+                                <div class="col-6">
+                                    <t t-set="partner" t-value="o.partner_id or (o.move_ids and o.move_ids[0].partner_id)"/>
+                                    <t t-set="commercial_partner" t-value="partner.commercial_partner_id"/>
+                    
+                                    <!-- DATOS CLIENTE -->
+                                    <strong>Customer: </strong>
+                                    <span t-field="commercial_partner.name"/>
+                                    <br/>
+                    
+                                    <span t-if="commercial_partner != partner">
+                                        <strong>Deliver to: </strong>
+                                        <span t-field="partner.name"/>
+                                    </span>
+                                    <span t-out="partner" t-options='{"widget": "contact", "fields": ["address", "phone", "mobile"], "no_marker": False}'/>
+                    
+                                    <!-- Responsabilidad AFIP -->
+                                    <div class="mt-2">
+                                        <strong>VAT Cond: </strong>
+                                        <span t-field="partner.l10n_ar_afip_responsibility_type_id"/>
+                                    </div>
+                    
+                                    <!-- CUIT -->
+                                    <t t-if="partner.vat and partner.l10n_latam_identification_type_id.name and partner.l10n_latam_identification_type_id.name != 'Sigd'">
+                                        <strong>
+                                            <t t-out="partner.l10n_latam_identification_type_id.name or o.company_id.country_id.vat_label" id="inv_tax_id_label"/>:
+                                        </strong>
+                                        <span t-out="partner.l10n_ar_formatted_vat or partner.vat"/>
+                                    </t>
+                                </div>
+
+                                <div class="col-6">
+                                    <t>
+                                        <strong>Order:</strong>
+                                        <span t-field="o.origin"/>
+                                    </t>
+                                    <t position="after">
+                                        <t t-if="o.cot">
+                                            <br/>
+                                            <strong>COT:</strong>
+                                            <span t-field="o.cot"/>
+                                        </t>
+                                    </t>
+                                    <t t-if="o._fields.get('purchase_order_number') and o.sudo().purchase_order_number">
+                                        <br/>
+                                        <strong>PO Number:</strong>
+                                        <span t-field="o.sudo().purchase_order_number"/>
+                                    </t>
+                                    <t t-if="o._fields.get('sale_id') and o.sudo().sale_id.client_order_ref">
+                                        <br/>
+                                        <strong>Customer Reference:</strong>
+                                        <span t-field="o.sudo().sale_id.client_order_ref"/>
+                                    </t>
+                                    <t t-if="o.declared_value">
+                                        <br/>
+                                        <strong>Declared Value:</strong>
+                                        <span t-field="o.declared_value"/>
+                                    </t>
+                                    <t t-if="o.number_of_packages">
+                                        <br/>
+                                        <strong>Packages Qty:</strong>
+                                        <span t-field="o.number_of_packages"/>
+                                    </t>
+                                </div>
+                            </div>
+                        </div> <!-- [FIX] SE CERRÓ EL DIV DE LA CAJA DE INFORMACIÓN AQUÍ -->
+
+                        <!-- === LÓGICA DE AGRUPACIÓN POR CAJAS === -->
+                        <t t-set="all_lines" t-value="o.move_line_ids"/>
+                        <t t-set="lines_with_box" t-value="[]"/>
+                        <t t-foreach="all_lines" t-as="l">
+                            <t t-set="eff_box" t-value="str(l.box_number or l.move_id.box_number or '')"/>
+                            <t t-if="eff_box">
+                                <t t-set="lines_with_box" t-value="lines_with_box + [{'line': l, 'box': eff_box}]"/>
+                            </t>
+                        </t>
+                        <t t-set="unique_boxes" t-value="list(set(item['box'] for item in lines_with_box))"/>
+                        <t t-set="unique_boxes" t-value="sorted(unique_boxes, key=lambda x: (0, int(x)) if x.isdigit() else (1, x))"/>
+
+                        <!-- BUCLE CAJAS -->
+                        <t t-foreach="unique_boxes" t-as="box">
+                            <t t-set="current_box_items" t-value="[item for item in lines_with_box if item['box'] == box]"/>
+                            <t t-set="box_total_qty" t-value="sum((item['line'].qty_done if o.state == 'done' else item['line'].quantity) for item in current_box_items)"/>
+
+                            <div class="mt-4 mb-3" style="page-break-inside: avoid;">
+                                <!-- Título con color nativo -->
+                                <h4 t-attf-style="color: {{p_color}}; padding-bottom: 5px; margin-bottom: 5px;">
+                                    <span class="fa fa-box-open mr-2"/> Caja <t t-esc="box"/>
+                                </h4>
+
+                                <table class="table table-sm o_main_table">
+                                    <thead>
+                                        <tr>
+                                            <th class="text-start">Producto</th>
+                                            <th class="text-end">Cantidad</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <t t-foreach="current_box_items" t-as="item">
+                                            <t t-set="move_line" t-value="item['line']"/>
+                                            <tr>
+                                                <td>
+                                                    <span t-field="move_line.product_id.display_name"/>
+                                                    <p t-if="move_line.description_picking != move_line.product_id.name and move_line.description_picking" class="text-muted small mb-0">
+                                                        <span t-field="move_line.description_picking"/>
+                                                    </p>
+                                                </td>
+                                                <td class="text-end">
+                                                    <t t-if="o.state == 'done'">
+                                                        <span t-field="move_line.qty_done"/>
+                                                    </t>
+                                                    <t t-else="">
+                                                        <span t-field="move_line.quantity"/>
+                                                    </t>
+                                                    <span t-field="move_line.product_uom_id"/>
+                                                </td>
+                                            </tr>
+                                        </t>
+                                        <!-- Subtotal -->
+                                        <tr class="is-subtotal text-end fw-bold">
+                                            <td t-attf-style="border-top: 1px solid {{s_color}};">Total Caja <t t-esc="box"/></td>
+                                            <td t-attf-style="border-top: 1px solid {{s_color}};">
+                                                <span t-esc="box_total_qty" t-options='{"widget": "float", "precision": 2}'/>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </t>
+
+                        <!-- SUELTOS -->
+                        <t t-set="lines_no_box" t-value="all_lines.filtered(lambda l: not l.box_number and not l.move_id.box_number)"/>
+                        <t t-if="lines_no_box and any(l.quantity > 0 for l in lines_no_box)">
+                            <div class="mt-4 mb-3" style="page-break-inside: avoid;">
+                                <h5 style="color: #e67e22; border-bottom: 1px solid #e67e22; padding-bottom: 5px;">
+                                    <span class="fa fa-exclamation-triangle mr-2"/> Sin Agrupar
+                                </h5>
+                                <table class="table table-sm o_main_table">
+                                    <thead>
+                                        <tr>
+                                            <th class="text-start">Producto</th>
+                                            <th class="text-end">Cantidad</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr t-foreach="lines_no_box" t-as="move_line">
+                                            <td><span t-field="move_line.product_id.display_name"/></td>
+                                            <td class="text-end">
+                                                <t t-if="o.state == 'done'"><span t-field="move_line.qty_done"/></t>
+                                                <t t-else=""><span t-field="move_line.quantity"/></t>
+                                                <span t-field="move_line.product_uom_id"/>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </t>
+
+                        <!-- TOTAL GENERAL -->
+                        <t t-set="grand_total_qty" t-value="sum((l.qty_done if o.state == 'done' else l.quantity) for l in all_lines)"/>
+                        <div class="clearfix mt-4">
+                            <div id="total" class="row">
+                                <div class="col-6 ms-auto">
+                                    <table class="table table-sm table-borderless">
+                                        <tr class="border-black o_total" t-attf-style="border-top: 2px solid {{p_color}};">
+                                            <td><strong>Total General</strong></td>
+                                            <td class="text-end">
+                                                <strong t-attf-style="font-size: 1.2em;">
+                                                    <span t-esc="grand_total_qty" t-options='{"widget": "float", "precision": 2}'/>
+                                                </strong>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>
