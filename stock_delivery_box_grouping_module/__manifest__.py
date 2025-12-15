@@ -16,13 +16,18 @@
         'stock', 
         'stock_delivery', 
         'l10n_ar_stock', 
-        'stock_ux'
+        'stock_ux',
+        'product'
     ],
     'data': [
+        'security/ir.model.access.csv',
         'views/stock_picking_views.xml', # Renombrado o nuevo
+        'views/product_vehicle_brand_views.xml',
+        'views/product_template_views.xml',
         'reports/paper_formats.xml',
         'reports/stock_label_dispatch.xml',
         'reports/stock_delivery_by_box.xml',
+        'wizard/product_label_vehicle.xml',
     ],
     'installable': True,
     'application': False,

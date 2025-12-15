@@ -11,7 +11,7 @@
         <field name="paperformat_id" ref="stock_delivery_box_grouping_module.paperformat_product_label_vehicle"/>
     </record>
 
-    <!-- 2. PLANTILLA DE DISEÑO -->
+    <!-- 2. PLANTILLA DE DISEÑO OPTIMIZADA -->
     <template id="report_product_label_vehicle_template">
         <t t-call="web.html_container">
             <div class="page">
@@ -22,76 +22,76 @@
                     <t t-foreach="range(qty)" t-as="i">
                         
                         <!-- 
-                           CONTENEDOR MAESTRO:
-                           - width: 95mm (Reducido para evitar corte derecho).
-                           - height: 46mm (Reducido para evitar hoja en blanco al final).
-                           - margin-left: 2mm (Para alejarlo del borde izquierdo).
-                           - overflow: hidden (Corta cualquier exceso).
+                           CONTENEDOR MAESTRO (Etiqueta individual):
+                           - width: 100mm (Ancho del papel)
+                           - height: 48mm (2mm menos que el papel para evitar salto de hoja por margen invisible)
+                           - Page-break-inside: avoid (Esta es la clave para no usar 'always').
+                           - overflow: hidden (Si algo es gigante, lo corta en vez de crear otra hoja)
                         -->
-                        <div style="width: 95mm; height: 46mm; margin-left: 2mm; page-break-after: always; padding: 1mm; box-sizing: border-box; overflow: hidden; font-family: Helvetica, Arial, sans-serif; position: relative;">
+                        <div style="width: 90mm; height: 45mm; page-break-inside: avoid; padding: 0; margin: 0; overflow: hidden; position: relative; background-color: white;">
                             
-                            <!-- 1. CABECERA -->
-                            <!-- Quitamos logo empresa, ponemos texto CAPEMI -->
-                            <table style="width: 100%; height: 10mm; border-bottom: 0px; margin-bottom: 1mm;">
-                                <tr>
-                                    <!-- TEXTO CAPEMI (Izquierda) -->
-                                    <td style="width: 40%; vertical-align: middle; padding-left: 2mm;">
-                                        <span style="font-size: 16px; font-weight: bold; letter-spacing: 1px;">CAPEMI</span>
-                                    </td>
-                                    
-                                    <!-- Ind Arg (Centro) -->
-                                    <td style="width: 20%; vertical-align: middle; text-align: center; font-size: 8px; color: #333;">
-                                        Ind Arg
-                                    </td>
-                                    
-                                    <!-- Logo Marca Vehículo (Derecha) -->
-                                    <!-- Agregamos padding-right: 4mm para despegarlo del borde de corte -->
-                                    <td style="width: 40%; vertical-align: middle; text-align: right; padding-right: 8mm;">
-                                        <t t-if="product.vehicle_brand_id.logo">
-                                            <img t-att-src="image_data_uri(product.vehicle_brand_id.logo)" style="max-height: 9mm; max-width: 100%; object-fit: contain;"/>
-                                        </t>
-                                    </td>
-                                </tr>
-                            </table>
-
-                            <!-- 2. CUERPO (DATOS) -->
-                            <div style="height: 20mm; width: 100%; padding-left: 2mm;">
-                                <!-- Referencia Interna -->
-                                <div style="font-size: 24px; font-weight: 900; line-height: 1; color: #000; margin-bottom: 2px;">
-                                    <span t-field="product.default_code"/>
-                                </div>
+                            <!-- MARGEN INTERNO SEGURO (2mm) -->
+                            <div style="padding: 2mm; margin-right: 10mm; width: 100%; height: 100%; box-sizing: border-box;">
                                 
-                                <!-- Nombre Producto -->
-                                <div style="font-size: 10px; font-weight: bold; text-transform: uppercase; margin-bottom: 2px; height: 8mm; overflow: hidden;">
-                                    <span t-field="product.name"/>
-                                </div>
-
-                                <!-- Modelo Vehículo -->
-                                <div style="font-size: 10px; font-weight: bold;">
-                                    <span t-field="product.vehicle_model_text"/>
-                                </div>
-                            </div>
-
-                            <!-- 3. PIE (BARCODE) -->
-                            <!-- Centrado y subido un poco para no tocar el borde inferior -->
-                            <div style="position: absolute; bottom: 1mm; left: 0; width: 100%; text-align: center;">
-                                <t t-if="product.barcode">
-                                    <div t-field="product.barcode" t-options="{'widget': 'barcode', 'symbology': 'auto', 'width': 600, 'height': 100, 'img_style': 'width:90%; height:9mm;', 'humanreadable': 0}"/>
+                                <table style="width: 100%; height: 100%; border-collapse: collapse;">
                                     
-                                    <!-- Texto Manual del Barcode -->
-                                    <div style="font-size: 9px; letter-spacing: 2px; font-weight: bold; line-height: 1;">
-                                        <span t-field="product.vehicle_model_text"/> <!-- Puse modelo aqui por error en la foto, corregir a barcode si quieres -->
-                                        <!-- CORRECCION: Debe ir el texto del modelo del auto abajo del barcode según foto? 
-                                             En tu foto dice "VW FOX" abajo del barcode. Si es así dejalo.
-                                             Si debe ir el número del código de barras: -->
-                                        <!-- <span t-field="product.barcode"/> --> 
-                                        
-                                        <!-- Segun tu foto de referencia (la del rollo), abajo del código de barras repite el modelo del auto -->
-                                        <span t-field="product.vehicle_model_text"/>
-                                    </div>
-                                </t>
-                            </div>
+                                    <!-- FILA 1: CABECERA (10mm Alto) -->
+                                    <tr style="height: 10mm;">
+                                        <!-- CAPEMI -->
+                                        <td style="width: 40%; vertical-align: middle;">
+                                            <span style="font-family: Arial, sans-serif; font-size: 16px; font-weight: 900; color: #000;">CAPEMI</span>
+                                        </td>
+                                        <!-- IND ARG -->
+                                        <td style="width: 20%; vertical-align: middle; text-align: center;">
+                                            <span style="font-family: Arial, sans-serif; font-size: 7px; font-weight: bold; color: #444;">IND ARG</span>
+                                        </td>
+                                        <!-- LOGO VEHÍCULO -->
+                                        <td style="width: 40%; vertical-align: middle; text-align: right; ">
+                                            <t t-if="product.vehicle_brand_id.logo">
+                                                <!-- Forzamos altura máxima para que no se corte ni empuje -->
+                                                <img t-att-src="image_data_uri(product.vehicle_brand_id.logo)" style="max-height: 9mm; max-width: 35mm; width: auto; object-fit: contain;"/>
+                                            </t>
+                                        </td>
+                                    </tr>
 
+                                    <!-- FILA 2: DATOS PRINCIPALES (19mm Alto) -->
+                                    <tr style="height: 10mm;">
+                                        <td colspan="3" style="vertical-align: top; padding-top: 1mm;">
+                                            <!-- Referencia (Código) -->
+                                            <div style="font-family: Arial, sans-serif; font-size: 26px; font-weight: 900; line-height: 1; color: #000;">
+                                                <span t-field="product.default_code"/>
+                                            </div>
+                                            
+                                            <!-- Nombre Producto -->
+                                            <div style="font-family: Arial, sans-serif; font-size: 10px; font-weight: bold; text-transform: uppercase; margin-top: 2px; line-height: 1.1; max-height: 8mm; overflow: hidden;">
+                                                <span t-field="product.name"/>
+                                            </div>
+
+                                            <!-- Modelo Vehículo -->
+                                            <div style="font-family: Arial, sans-serif; font-size: 10px; margin-top: 2px; font-weight: bold; font-style: italic;">
+                                                <span t-field="product.vehicle_model_text"/>
+                                            </div>
+                                        </td>
+                                    </tr>
+
+                                    <!-- FILA 3: PIE (BARCODE) (Resto - aprox 12mm) -->
+                                    <tr>
+                                        <td colspan="3" style="vertical-align: bottom; text-align: center;">
+                                            <t t-if="product.barcode">
+                                                <!-- 
+                                                    BARCODE CORREGIDO (Estilo Odoo Nativo):
+                                                    - t-out: Imprime el HTML generado por el widget.
+                                                    - quiet: 0 (Quita márgenes blancos laterales).
+                                                    - img_style: Define el tamaño CSS real (ancho casi total, altura controlada).
+                                                    - humanreadable: 1 (Muestra el número abajo integrado).
+                                                -->
+                                                <div t-out="product.barcode" t-options="{'widget': 'barcode', 'symbology': 'auto', 'img_style': 'width:40mm; height:12mm;', 'quiet': 0, 'humanreadable': 1}"/>
+                                            </t>
+                                        </td>
+                                    </tr>
+
+                                </table>
+                            </div>
                         </div>
                     </t>
                 </t>

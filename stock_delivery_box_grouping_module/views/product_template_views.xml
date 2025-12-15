@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="product_template_form_view_vehicle_label" model="ir.ui.view">
+        <field name="name">product.template.form.vehicle.label</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.product_template_form_view"/>
+        <field name="arch" type="xml">
+            <group name="group_lots_and_weight" position="inside">
+                <group string="Etiqueta Vehículo">
+                    <field name="vehicle_brand_id" options="{'no_create': True}"/>
+                    <field name="vehicle_model_text"/>
+                </group>
+            </group>
+        </field>
+    </record>
+</odoo>

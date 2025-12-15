@@ -1,101 +1,39 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-
-    <!-- 1. ACCIÓN DE REPORTE -->
-    <record id="report_product_vehicle_label" model="ir.actions.report">
-        <field name="name">Etiqueta Vehículo</field>
-        <field name="model">product.product</field>
-        <field name="report_type">qweb-pdf</field>
-        <field name="report_name">stock_delivery_box_grouping_module.report_product_label_vehicle_template</field>
-        <field name="report_file">stock_delivery_box_grouping_module.report_product_label_vehicle_template</field>
-        <field name="paperformat_id" ref="stock_delivery_box_grouping_module.paperformat_product_label_vehicle"/>
+    <record id="paperformat_label_dispatch_custom" model="report.paperformat">
+        <field name="name">Etiqueta Despacho (150x100mm)</field>
+        <field name="default" eval="True"/>
+        <field name="format">custom</field>
+        <field name="page_height">100</field>
+        <field name="page_width">150</field>
+        <field name="orientation">Landscape</field>
+        <field name="margin_top">2</field>
+        <field name="margin_bottom">2</field>
+        <field name="margin_left">2</field>
+        <field name="margin_right">2</field>
+        <field name="header_line" eval="False"/>
+        <field name="header_spacing">0</field>
+        <field name="dpi">90</field>
     </record>
 
-    <!-- 2. PLANTILLA DE DISEÑO -->
-    <template id="report_product_label_vehicle_template">
-        <t t-call="web.html_container">
-            <div class="page">
-                <t t-foreach="quantity_by_product" t-as="p">
-                    <t t-set="qty" t-value="quantity_by_product[p]"/>
-                    <t t-set="product" t-value="request.env['product.product'].sudo().browse(int(p))"/>
-                    
-                    <t t-foreach="range(qty)" t-as="i">
-                        
-                        <!-- 
-                           CONTENEDOR MAESTRO:
-                           - width: 95mm (Reducido para evitar corte derecho).
-                           - height: 46mm (Reducido para evitar hoja en blanco al final).
-                           - margin-left: 2mm (Para alejarlo del borde izquierdo).
-                           - overflow: hidden (Corta cualquier exceso).
-                        -->
-                        <div style="width: 95mm; height: 46mm; margin-left: 2mm; page-break-after: always; padding: 1mm; box-sizing: border-box; overflow: hidden; font-family: Helvetica, Arial, sans-serif; position: relative;">
-                            
-                            <!-- 1. CABECERA -->
-                            <!-- Quitamos logo empresa, ponemos texto CAPEMI -->
-                            <table style="width: 100%; height: 10mm; border-bottom: 0px; margin-bottom: 1mm;">
-                                <tr>
-                                    <!-- TEXTO CAPEMI (Izquierda) -->
-                                    <td style="width: 40%; vertical-align: middle; padding-left: 2mm;">
-                                        <span style="font-size: 16px; font-weight: bold; letter-spacing: 1px;">CAPEMI</span>
-                                    </td>
-                                    
-                                    <!-- Ind Arg (Centro) -->
-                                    <td style="width: 20%; vertical-align: middle; text-align: center; font-size: 8px; color: #333;">
-                                        Ind Arg
-                                    </td>
-                                    
-                                    <!-- Logo Marca Vehículo (Derecha) -->
-                                    <!-- Agregamos padding-right: 4mm para despegarlo del borde de corte -->
-                                    <td style="width: 40%; vertical-align: middle; text-align: right; padding-right: 8mm;">
-                                        <t t-if="product.vehicle_brand_id.logo">
-                                            <img t-att-src="image_data_uri(product.vehicle_brand_id.logo)" style="max-height: 9mm; max-width: 100%; object-fit: contain;"/>
-                                        </t>
-                                    </td>
-                                </tr>
-                            </table>
-
-                            <!-- 2. CUERPO (DATOS) -->
-                            <div style="height: 20mm; width: 100%; padding-left: 2mm;">
-                                <!-- Referencia Interna -->
-                                <div style="font-size: 24px; font-weight: 900; line-height: 1; color: #000; margin-bottom: 2px;">
-                                    <span t-field="product.default_code"/>
-                                </div>
-                                
-                                <!-- Nombre Producto -->
-                                <div style="font-size: 10px; font-weight: bold; text-transform: uppercase; margin-bottom: 2px; height: 8mm; overflow: hidden;">
-                                    <span t-field="product.name"/>
-                                </div>
-
-                                <!-- Modelo Vehículo -->
-                                <div style="font-size: 10px; font-weight: bold;">
-                                    <span t-field="product.vehicle_model_text"/>
-                                </div>
-                            </div>
-
-                            <!-- 3. PIE (BARCODE) -->
-                            <!-- Centrado y subido un poco para no tocar el borde inferior -->
-                            <div style="position: absolute; bottom: 1mm; left: 0; width: 100%; text-align: center;">
-                                <t t-if="product.barcode">
-                                    <div t-field="product.barcode" t-options="{'widget': 'barcode', 'symbology': 'auto', 'width': 600, 'height': 100, 'img_style': 'width:90%; height:9mm;', 'humanreadable': 0}"/>
-                                    
-                                    <!-- Texto Manual del Barcode -->
-                                    <div style="font-size: 9px; letter-spacing: 2px; font-weight: bold; line-height: 1;">
-                                        <span t-field="product.vehicle_model_text"/> <!-- Puse modelo aqui por error en la foto, corregir a barcode si quieres -->
-                                        <!-- CORRECCION: Debe ir el texto del modelo del auto abajo del barcode según foto? 
-                                             En tu foto dice "VW FOX" abajo del barcode. Si es así dejalo.
-                                             Si debe ir el número del código de barras: -->
-                                        <!-- <span t-field="product.barcode"/> --> 
-                                        
-                                        <!-- Segun tu foto de referencia (la del rollo), abajo del código de barras repite el modelo del auto -->
-                                        <span t-field="product.vehicle_model_text"/>
-                                    </div>
-                                </t>
-                            </div>
-
-                        </div>
-                    </t>
-                </t>
-            </div>
-        </t>
-    </template>
+    <!-- ETIQUETA PRODUCTO (VEHÍCULO) -->
+    <record id="paperformat_product_label_vehicle" model="report.paperformat">
+        <field name="name">Etiqueta Producto Vehículo (100x50mm)</field>
+        <field name="default" eval="False"/>
+        <field name="format">custom</field>
+        <field name="page_height">50</field>
+        <field name="page_width">100</field>
+        <field name="orientation">Portrait</field>
+        
+        <!-- MÁRGENES ESTRICTOS EN 0 -->
+        <field name="margin_top">0</field>
+        <field name="margin_bottom">0</field>
+        <field name="margin_left">0</field>
+        <field name="margin_right">0</field>
+        
+        <field name="header_line" eval="False"/>
+        <field name="header_spacing">0</field>
+        <field name="dpi">90</field>
+        <field name="disable_shrinking" eval="True"/>
+    </record>
 </odoo>

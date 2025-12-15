@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    
+    <!-- Vista Formulario de Marca -->
+    <record id="view_product_vehicle_brand_form" model="ir.ui.view">
+        <field name="name">product.vehicle.brand.form</field>
+        <field name="model">product.vehicle.brand</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <field name="logo" widget="image" class="oe_avatar"/>
+                    <div class="oe_title">
+                        <label for="name" class="oe_edit_only"/>
+                        <h1><field name="name" placeholder="Ej. Volkswagen"/></h1>
+                    </div>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Vista Lista de Marcas -->
+    <record id="view_product_vehicle_brand_tree" model="ir.ui.view">
+        <field name="name">product.vehicle.brand.list</field>
+        <field name="model">product.vehicle.brand</field>
+        <field name="arch" type="xml">
+            <list >
+                <field name="name"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Acción -->
+    <record id="action_product_vehicle_brand" model="ir.actions.act_window">
+        <field name="name">Marcas de Vehículos</field>
+        <field name="res_model">product.vehicle.brand</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <!-- Menú en Inventario / Configuración -->
+    <menuitem id="menu_product_vehicle_brand"
+              parent="stock.menu_stock_config_settings"
+              action="action_product_vehicle_brand"
+              sequence="50"/>
+
+</odoo>
