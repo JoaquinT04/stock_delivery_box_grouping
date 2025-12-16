@@ -8,7 +8,7 @@
         2. Etiquetas de Despacho por Caja.
     """,
     'author': "Tu Nombre / Empresa",
-    'website': "https://tusitio.com",
+    'website': "www.deglia.xyz",
     'category': 'Inventory/Delivery',
     'version': '18.0.1.0.3',
     'license': 'OPL-1',

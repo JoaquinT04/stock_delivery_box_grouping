@@ -1,75 +1,95 @@
 ## 📋 Descripción General
 
-Este módulo personaliza el **Recibo de Entrega (Remito/Delivery Slip)** para agrupar visualmente los productos según el número de caja asignado.
+Este módulo extiende las capacidades del módulo de Inventario para adaptar la documentación de salida a flujos logísticos que requieren agrupación por cajas y etiquetado específico de autopartes.
 
-El objetivo es reemplazar la lista plana de productos por una estructura dividida por cajas (ej. "CAJA - 1", "CAJA - 2"), mejorando la logística de despacho y cumpliendo con el formato solicitado por el cliente. El diseño es compatible con la localización argentina (Adhoc).
-
----
-
-## 🛠️ Implementación Técnica (Lo que se hizo)
-
-### 1. Migración de Campo Studio a Código
-Se detectó que existía un campo creado con Odoo Studio (`box_number`). Para garantizar robustez y trazabilidad, se definió este campo explícitamente en el código Python, manteniendo el nombre técnico para preservar los datos existentes.
-
-*   **Modelo `stock.move` (Pestaña Operaciones):** Se agregó `box_number`.
-*   **Modelo `stock.move.line` (Pestaña Operaciones Detalladas):** Se agregó `box_number`.
-
-### 2. Lógica de Reporte "Inteligente"
-El reporte estándar itera sobre las líneas de movimiento (`stock.move.line`). Sin embargo, en el flujo operativo normal, el usuario suele asignar la caja en la vista general (`stock.move`).
-
-Para resolver esto, se implementó una lógica de cascada en el reporte QWeb:
-1.  **Nivel 1 (Prioridad):** Busca si la línea de detalle tiene caja asignada.
-2.  **Nivel 2 (Fallback):** Si la línea no tiene caja, busca si la operación padre (`stock.move`) tiene caja asignada.
-3.  **Nivel 3 (Sin Agrupar):** Si ninguno tiene dato, se agrupa bajo la sección "SIN AGRUPAR / SUELTOS".
-
-### 3. Diseño QWeb
-*   Se hereda de `stock.report_delivery_document`.
-*   Se utiliza `priority="99"` para asegurar que esta vista sobreescriba cualquier modificación realizada por módulos de terceros (como `l10n_ar_stock` de Adhoc).
-*   Se oculta la tabla estándar y se reemplaza por bucles dinámicos basados en las cajas detectadas.
-*   Se ajustaron márgenes (`padding`) para mejorar la legibilidad del PDF.
+Incluye tres funcionalidades principales:
+1.  **Remito por Cajas (Nuevo Reporte):** Un documento de entrega alternativo que agrupa ítems por número de caja, con diseño nativo y soporte para la localización argentina.
+2.  **Etiquetas de Despacho:** Generación de etiquetas identificatorias para pegar en cada caja física.
+3.  **Etiquetas de Producto (Vehículo):** Un sistema de etiquetado en rollo (100x50mm) que incluye logo de la marca del vehículo, códigos de barra grandes y datos técnicos.
 
 ---
 
-## 🚀 Flujo de Uso y Casos Soportados
+## 🛠️ Implementación Técnica
 
-Este módulo se adapta al flujo estándar de Odoo. No requiere pasos extras complejos.
+### 1. Gestión de Cajas (Backend)
+Se profesionalizó la gestión del número de caja, migrando de campos de texto (Studio) a una estructura de datos robusta:
 
-### Caso A: Carga Rápida (Flujo Normal)
-El usuario valida la entrega desde la pestaña **"Operaciones"**.
-1.  Ingresa al Picking (Transferencia).
-2.  En la línea del producto, columna **"Nro. Caja"**, escribe el número (ej. "1").
-3.  Guarda y Valida.
-4.  **Resultado en PDF:** El producto aparece bajo el título **"CAJA - 1"**.
+*   **Campo `box_number` (Integer):** Se creó este campo en `stock.move` y `stock.move.line`. Al ser entero, permite un ordenamiento natural correcto (1, 2, 10...) en lugar de alfanumérico (1, 10, 2...).
+*   **Sincronización Automática:** El campo en la línea detallada (`stock.move.line`) es `related` al movimiento padre (`stock.move`) pero **editable**. Esto significa que si el usuario asigna la "Caja 1" en la vista general, todas las líneas heredan ese dato, pero permite excepciones manuales en el detalle.
+*   **Vistas:** Se inyectó la columna "Nro. Caja" tanto en la pestaña de Operaciones como en Operaciones Detalladas del Picking.
 
-### Caso B: Carga Detallada (Lotes/Series/Packs)
-El usuario necesita especificar cajas diferentes para un mismo producto (ej. mitad en caja 1, mitad en caja 2) desde la pestaña **"Operaciones Detalladas"**.
-1.  Ingresa al detalle de operaciones.
-2.  Asigna "1" a la primera línea y "2" a la segunda línea del mismo producto.
-3.  **Resultado en PDF:** El producto se divide y aparece una parte en **"CAJA - 1"** y otra en **"CAJA - 2"**.
+### 2. Reporte: Remito por Cajas (Punto 1 y 2)
+Se desarrolló un reporte QWeb totalmente nuevo (`report_delivery_by_box`) independiente del estándar para evitar conflictos con módulos de terceros (Adhoc).
 
-### Caso C: Sin Asignación
-El usuario olvida poner caja o es mercancía suelta.
-1.  Deja el campo vacío.
-2.  **Resultado en PDF:** Los items aparecen al final bajo un bloque amarillo **"SIN AGRUPAR / SUELTOS"**.
+*   **Lógica de Agrupación:** El reporte itera sobre los números de caja únicos. Los productos sin caja asignada se agrupan al final bajo "Sin Agrupar".
+*   **Diseño "Theme Aware":** El reporte detecta automáticamente los colores de la compañía (`primary_color`, `secondary_color`) y el diseño configurado en Odoo (Light, Boxed, Striped), adaptando bordes, títulos y tablas para que parezca un reporte nativo.
+*   **Cabecera Híbrida:** Se diseñó una cabecera que respeta el logo y dirección de la empresa (estándar Odoo) pero integra la información fiscal de Argentina (Responsabilidad AFIP, CUIT, etc.) de forma limpia.
+*   **Contenedor de Info:** Se creó un bloque de información que agrupa "Cliente" y "Datos del Pedido" en una estructura de columnas alineada, mejorando la legibilidad.
 
-### Caso D: Impresión antes de Validar (Estado "Disponible")
-El usuario imprime el remito antes de hacer clic en "Validar".
-1.  El remito está en estado `assigned` (Disponible).
-2.  **Resultado en PDF:** El reporte detecta que no está hecho, por lo tanto imprime la columna **"Reservado"** en lugar de "Hecho", evitando que salgan cantidades en `0.00`.
+### 3. Etiquetas de Despacho (Punto 2)
+*   **Reporte:** `stock_label_dispatch.xml`.
+*   **Funcionalidad:** Genera una página por cada caja distinta presente en el remito.
+*   **Diseño:** Muestra el número de caja en tamaño gigante y una tabla resumen con el contenido de esa caja específica.
+
+### 4. Etiquetas de Producto / Vehículo (Punto 3)
+Se implementó una solución completa para imprimir etiquetas en impresoras de rollo (Zebra/Datamax) de 100x50mm.
+
+*   **Modelo de Marcas (`product.vehicle.brand`):** Para evitar la duplicidad de datos, se creó un modelo catálogo para las marcas (VW, Ford, etc.). La imagen del logo se guarda **una sola vez** en este modelo y los productos la referencian.
+*   **Campos en Producto:**
+    *   `vehicle_brand_id`: Relación con la marca.
+    *   `vehicle_model_text`: Campo de texto para el modelo específico (ej. "Fox / Suran").
+*   **Wizard Extendido:** Se heredó `product.label.layout` para agregar la opción **"Etiqueta Vehículo (Rollo)"** al menú de impresión estándar de Odoo.
+*   **Lógica de Cantidades:** Se modificó el wizard para que utilice la **Demanda Inicial** (`product_uom_qty`) en lugar de la cantidad hecha. Esto permite imprimir etiquetas completas antes de realizar el picking.
+*   **Motor de Renderizado (Hard Reset):** Para solucionar los problemas de márgenes de `wkhtmltopdf` que generaban páginas en blanco:
+    *   Se inyectaron estilos CSS globales (`html, body { margin: 0 }`).
+    *   Se definió una altura lógica de **44mm** (para papel de 50mm) y `overflow: hidden`.
+    *   Se construyó el diseño con **Tablas HTML rígidas**, garantizando que el logo y el código de barras nunca se superpongan ni se corten.
 
 ---
 
-## 📁 Estructura del Módulo
+## 🚀 Flujo de Uso
 
-text
+### A. Imprimir Remito Agrupado
+1.  Vaya a un **Remito (Transferencia)**.
+2.  Asegúrese de haber cargado los números en la columna **"Nro. Caja"**.
+3.  Haga clic en el botón **Imprimir**.
+4.  Seleccione **"Remito por Cajas (Nativo)"**.
+5.  *Resultado:* Un PDF A4 con los productos agrupados visualmente por caja y totales parciales.
+
+### B. Imprimir Etiquetas de Despacho (Cajas)
+1.  En el mismo Remito, haga clic en **Imprimir**.
+2.  Seleccione **"Etiquetas de Despacho (Por Caja)"**.
+3.  *Resultado:* Un PDF donde cada hoja representa una caja física, ideal para pegar en el exterior del bulto.
+
+### C. Imprimir Etiquetas de Producto (Vehículo)
+1.  Puede hacerlo desde el Remito (botón **Acción > Etiquetas**) o desde la ficha del Producto.
+2.  En el asistente, seleccione el formato **"Etiqueta Vehículo (Rollo)"**.
+3.  *Configuración Previa:* Asegúrese de que el producto tenga asignada una **Marca de Vehículo** y un **Código de Barras**.
+4.  *Resultado:* Un PDF diseñado para impresoras térmicas (100x50mm) con el logo de la empresa, el logo de la marca del auto, el código de referencia en grande y el código de barras escaneable.
+
+---
+
+## 📁 Estructura de Archivos
+
+```text
 stock_delivery_box_grouping/
 ├── __init__.py
 ├── __manifest__.py
+├── security/
+│   └── ir.model.access.csv           # Permisos para el modelo de Marcas
 ├── models/
 │   ├── __init__.py
-│   ├── stock_move.py       # Campo en el modelo padre (Operaciones)
-│   └── stock_move_line.py  # Campo en el modelo hijo (Detalle)
+│   ├── stock_move.py                 # Campo box_number en Move
+│   ├── stock_move_line.py            # Campo box_number en Move Line (Related)
+│   ├── product_vehicle_brand.py      # Nuevo modelo de Marcas
+│   ├── product_template.py           # Campos de vehículo en Producto
+│   └── product_label_layout.py       # Lógica del Wizard de impresión
 ├── reports/
-│   └── stock_report_delivery.xml  # Lógica de agrupación y diseño
+│   ├── paper_formats.xml             # Definición de tamaños (150x100, 100x50)
+│   ├── stock_delivery_by_box.xml     # Diseño del Remito Agrupado
+│   ├── stock_label_dispatch.xml      # Diseño de Etiqueta de Caja
+│   └── product_label_vehicle.xml     # Diseño de Etiqueta de Producto (Rollo)
 └── views/
-    └── stock_move_line_views.xml  # Input en vista detallada
+    ├── stock_picking_views.xml       # Inyección de campos en vistas de Picking
+    ├── product_vehicle_brand_views.xml # Menú de configuración de Marcas
+    └── product_template_views.xml    # Pestaña de configuración en Producto
