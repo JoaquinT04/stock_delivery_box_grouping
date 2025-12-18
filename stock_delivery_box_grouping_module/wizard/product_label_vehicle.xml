@@ -45,13 +45,6 @@
                                         <td style="width: 20%; vertical-align: middle; text-align: center;">
                                             <span style="font-family: Arial, sans-serif; font-size: 7px; font-weight: bold; color: #444;">IND ARG</span>
                                         </td>
-                                        <!-- LOGO VEHÍCULO -->
-                                        <td style="width: 40%; vertical-align: middle; text-align: right; ">
-                                            <t t-if="product.vehicle_brand_id.logo">
-                                                <!-- Forzamos altura máxima para que no se corte ni empuje -->
-                                                <img t-att-src="image_data_uri(product.vehicle_brand_id.logo)" style="max-height: 9mm; max-width: 35mm; width: auto; object-fit: contain;"/>
-                                            </t>
-                                        </td>
                                     </tr>
 
                                     <!-- FILA 2: DATOS PRINCIPALES (19mm Alto) -->
@@ -65,11 +58,6 @@
                                             <!-- Nombre Producto -->
                                             <div style="font-family: Arial, sans-serif; font-size: 10px; font-weight: bold; text-transform: uppercase; margin-top: 2px; line-height: 1.1; max-height: 8mm; overflow: hidden;">
                                                 <span t-field="product.name"/>
-                                            </div>
-
-                                            <!-- Modelo Vehículo -->
-                                            <div style="font-family: Arial, sans-serif; font-size: 10px; margin-top: 2px; font-weight: bold; font-style: italic;">
-                                                <span t-field="product.vehicle_model_text"/>
                                             </div>
                                         </td>
                                     </tr>

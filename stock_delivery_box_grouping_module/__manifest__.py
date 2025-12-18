@@ -21,9 +21,7 @@
     ],
     'data': [
         'security/ir.model.access.csv',
-        'views/stock_picking_views.xml', # Renombrado o nuevo
-        'views/product_vehicle_brand_views.xml',
-        'views/product_template_views.xml',
+        'views/stock_picking_views.xml',
         'reports/paper_formats.xml',
         'reports/stock_label_dispatch.xml',
         'reports/stock_delivery_by_box.xml',
