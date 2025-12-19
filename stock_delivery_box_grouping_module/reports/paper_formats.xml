@@ -16,21 +16,23 @@
         <field name="dpi">90</field>
     </record>
 
-    <!-- ETIQUETA PRODUCTO (VEHÍCULO) -->
+    <!-- ETIQUETA PRODUCTO (VEHÍCULO) - CORREGIDO A REALIDAD 55x30mm -->
     <record id="paperformat_product_label_vehicle" model="report.paperformat">
-        <field name="name">Etiqueta Producto Vehículo (100x50mm)</field>
+        <field name="name">Etiqueta Producto Vehículo (55x30mm)</field>
         <field name="default" eval="False"/>
         <field name="format">custom</field>
-        <field name="page_height">50</field>
-        <field name="page_width">100</field>
-        <field name="orientation">Portrait</field>
         
-        <!-- MÁRGENES ESTRICTOS EN 0 -->
+        <!-- ANCHO DEL ROLLO -->
+        <field name="page_width">55</field>
+        
+        <!-- ALTO DE LA ETIQUETA (SALIDA) -->
+        <field name="page_height">30</field> 
+        
+        <field name="orientation">Portrait</field>
         <field name="margin_top">0</field>
         <field name="margin_bottom">0</field>
         <field name="margin_left">0</field>
         <field name="margin_right">0</field>
-        
         <field name="header_line" eval="False"/>
         <field name="header_spacing">0</field>
         <field name="dpi">90</field>

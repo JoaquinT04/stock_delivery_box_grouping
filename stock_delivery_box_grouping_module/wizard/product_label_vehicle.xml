@@ -1,9 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
-    <!-- 1. ACCIÓN DE REPORTE -->
     <record id="report_product_vehicle_label" model="ir.actions.report">
-        <field name="name">Etiqueta Vehículo</field>
+        <field name="name">Etiqueta Vehículo (55x30)</field>
         <field name="model">product.product</field>
         <field name="report_type">qweb-pdf</field>
         <field name="report_name">stock_delivery_box_grouping_module.report_product_label_vehicle_template</field>
@@ -11,69 +10,72 @@
         <field name="paperformat_id" ref="stock_delivery_box_grouping_module.paperformat_product_label_vehicle"/>
     </record>
 
-    <!-- 2. PLANTILLA DE DISEÑO OPTIMIZADA -->
     <template id="report_product_label_vehicle_template">
-        <t t-call="web.html_container">
+        <t t-call="web.basic_layout">
+            <!-- RESET AGRESIVO -->
+            <style>
+                html, body { margin: 0 !important; padding: 0 !important; width: 100%; height: 100%; }
+                .page { margin: 0 !important; padding: 0 !important; border: 0 !important; }
+            </style>
+
             <div class="page">
-                <t t-foreach="quantity_by_product" t-as="p">
-                    <t t-set="qty" t-value="quantity_by_product[p]"/>
-                    <t t-set="product" t-value="request.env['product.product'].sudo().browse(int(p))"/>
+                <!-- Bucle sobre IDs de movimientos -->
+                <t t-foreach="move_ids_list" t-as="m_id">
                     
-                    <t t-foreach="range(qty)" t-as="i">
+                    <t t-set="move" t-value="request.env['stock.move'].sudo().browse(int(m_id))"/>
+                    <t t-set="product" t-value="move.product_id"/>
+                    <t t-set="line_qty" t-value="int(move.product_uom_qty)"/>
+
+                    <t t-foreach="range(line_qty)" t-as="i">
                         
                         <!-- 
-                           CONTENEDOR MAESTRO (Etiqueta individual):
-                           - width: 100mm (Ancho del papel)
-                           - height: 48mm (2mm menos que el papel para evitar salto de hoja por margen invisible)
-                           - Page-break-inside: avoid (Esta es la clave para no usar 'always').
-                           - overflow: hidden (Si algo es gigante, lo corta en vez de crear otra hoja)
+                           CONTENEDOR 55x30
+                           - Height: 28mm (2mm menos que el papel).
+                           - Overflow: hidden.
+                           - Page-break-after: always.
                         -->
-                        <div style="width: 90mm; height: 45mm; page-break-inside: avoid; padding: 0; margin: 0; overflow: hidden; position: relative; background-color: white;">
+                        <div style="width: 55mm; height: 28mm; page-break-after: always; position: relative; overflow: hidden; background-color: white; color: black; margin: 0; padding: 0;">
                             
-                            <!-- MARGEN INTERNO SEGURO (2mm) -->
-                            <div style="padding: 2mm; margin-right: 10mm; width: 100%; height: 100%; box-sizing: border-box;">
+                            <!-- Contenido interno con padding 1mm -->
+                            <div style="padding: 1mm; width: 100%; height: 100%; box-sizing: border-box;">
                                 
-                                <table style="width: 100%; height: 100%; border-collapse: collapse;">
+                                <table style="width: 100%; border-collapse: collapse;">
                                     
-                                    <!-- FILA 1: CABECERA (10mm Alto) -->
-                                    <tr style="height: 10mm;">
-                                        <!-- CAPEMI -->
-                                        <td style="width: 40%; vertical-align: middle;">
-                                            <span style="font-family: Arial, sans-serif; font-size: 16px; font-weight: 900; color: #000;">CAPEMI</span>
+                                    <!-- 1. CABECERA (5mm) -->
+                                    <tr style="height: 5mm;">
+                                        <td style="width: 60%; vertical-align: middle; line-height: 1;">
+                                            <span style="font-family: Arial, sans-serif; font-size: 8px; font-weight: 900;">CAPEMI</span>
                                         </td>
-                                        <!-- IND ARG -->
-                                        <td style="width: 20%; vertical-align: middle; text-align: center;">
-                                            <span style="font-family: Arial, sans-serif; font-size: 7px; font-weight: bold; color: #444;">IND ARG</span>
+                                        <td style="width: 25%; vertical-align: middle; text-align: center; line-height: 1;">
+                                            <span style="font-family: Arial, sans-serif; font-size: 5px; font-weight: 900;">IND. ARG.</span>
                                         </td>
                                     </tr>
 
-                                    <!-- FILA 2: DATOS PRINCIPALES (19mm Alto) -->
-                                    <tr style="height: 10mm;">
-                                        <td colspan="3" style="vertical-align: top; padding-top: 1mm;">
-                                            <!-- Referencia (Código) -->
-                                            <div style="font-family: Arial, sans-serif; font-size: 26px; font-weight: 900; line-height: 1; color: #000;">
+                                    <!-- 2. CUERPO (13mm) -->
+                                    <tr style="height: 13mm;">
+                                        <td colspan="2" style="vertical-align: top; padding-top: 1mm;">
+                                            <!-- Referencia -->
+                                            <div style="font-family: Arial, sans-serif; font-size: 14px; font-weight: 900; line-height: 1; color: #000; margin-bottom: 1px;">
                                                 <span t-field="product.default_code"/>
                                             </div>
-                                            
-                                            <!-- Nombre Producto -->
-                                            <div style="font-family: Arial, sans-serif; font-size: 10px; font-weight: bold; text-transform: uppercase; margin-top: 2px; line-height: 1.1; max-height: 8mm; overflow: hidden;">
+                                            <!-- Nombre -->
+                                            <div style="font-family: Arial, sans-serif; font-size: 7px; font-weight: bold; text-transform: uppercase; line-height: 1; max-height: 7mm; overflow: hidden;">
                                                 <span t-field="product.name"/>
                                             </div>
                                         </td>
                                     </tr>
 
-                                    <!-- FILA 3: PIE (BARCODE) (Resto - aprox 12mm) -->
+                                    <!-- 3. PIE (BARCODE) (10mm) -->
                                     <tr>
-                                        <td colspan="3" style="vertical-align: bottom; text-align: center;">
+                                        <td colspan="2" style="text-align: left; vertical-align: bottom;">
                                             <t t-if="product.barcode">
-                                                <!-- 
-                                                    BARCODE CORREGIDO (Estilo Odoo Nativo):
-                                                    - t-out: Imprime el HTML generado por el widget.
-                                                    - quiet: 0 (Quita márgenes blancos laterales).
-                                                    - img_style: Define el tamaño CSS real (ancho casi total, altura controlada).
-                                                    - humanreadable: 1 (Muestra el número abajo integrado).
-                                                -->
-                                                <div t-out="product.barcode" t-options="{'widget': 'barcode', 'symbology': 'auto', 'img_style': 'width:40mm; height:12mm;', 'quiet': 0, 'humanreadable': 1}"/>
+                                                <!-- Barcode ancho 53mm -->
+                                                <div style="width: 100%; display: flex; justify-content: flex-start;">
+                                                    <div t-out="product.barcode" t-options="{'widget': 'barcode', 'symbology': 'auto', 'width': 400, 'height': 50, 'img_style': 'width:49mm; height:7mm;', 'quiet': 0, 'humanreadable': 0}"/>
+                                                </div>
+                                                <div style="font-family: monospace; font-size: 7px; letter-spacing: 1px; font-weight: bold; line-height: 1; text-align: left;">
+                                                    <span t-field="product.barcode"/>
+                                                </div>
                                             </t>
                                         </td>
                                     </tr>

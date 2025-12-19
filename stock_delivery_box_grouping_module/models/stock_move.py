@@ -6,6 +6,6 @@ class StockMove(models.Model):
 
     box_number = fields.Integer(
         string='Nro. Caja',
-        copy=False,
+        copy=True,
         help="Número de caja asignado a esta linea"
     )

@@ -20,7 +20,6 @@
         'product'
     ],
     'data': [
-        'security/ir.model.access.csv',
         'views/stock_picking_views.xml',
         'reports/paper_formats.xml',
         'reports/stock_label_dispatch.xml',

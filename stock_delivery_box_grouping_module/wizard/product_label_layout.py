@@ -11,22 +11,18 @@ class ProductLabelLayout(models.TransientModel):
 
     def _prepare_report_data(self):
         if self.print_format == 'vehicle_roll':
-            # Llamamos al super para obtener la data base
-            xml_id, data = super()._prepare_report_data()
             
-            # --- CORRECCIÓN DE CANTIDAD ---
-            # Si quieres forzar que siempre salga 1 etiqueta por producto
-            # independientemente de la cantidad del remito:
-            new_quantities = {}
-            for product_id, qty in data.get('quantity_by_product', {}).items():
-                # Forzamos 1 unidad por producto
-                new_quantities[product_id] = 1 
-            
-            data['quantity_by_product'] = new_quantities
-            # ------------------------------
-
-            # XML ID correcto
             xml_id = 'stock_delivery_box_grouping_module.report_product_vehicle_label'
-            return xml_id, data
+            
+            moves = self.move_ids
+            if not moves and self._context.get('active_model') == 'stock.picking':
+                picking_ids = self._context.get('active_ids') or [self._context.get('active_id')]
+                moves = self.env['stock.move'].search([('picking_id', 'in', picking_ids)])
+
+            # DEVOLVEMOS LISTA DE IDs (Enteros)
+            return xml_id, {
+                'move_ids_list': moves.ids,  # Pasamos solo IDs
+                'active_model': 'stock.move'
+            }
         
         return super()._prepare_report_data()

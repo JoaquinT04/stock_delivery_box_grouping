@@ -9,7 +9,9 @@ class StockMoveLine(models.Model):
         # La magia: hereda del padre (move_id), se guarda en BD, pero es editable.
         related='move_id.box_number',
         store=True,
-        readonly=False,
+        readonly=True,
         group_operator='max', # Para que no sume los números de caja en las vistas pivot
         help="Hereda del movimiento, pero puede ser modificado específicamente para esta línea."
     )
+
+    
