@@ -6,8 +6,8 @@
         <field name="name">Lista de empaque</field>
         <field name="model">stock.picking</field>
         <field name="report_type">qweb-pdf</field>
-        <field name="report_name">stock_delivery_box_grouping.report_delivery_by_box</field>
-        <field name="report_file">stock_delivery_box_grouping.report_delivery_by_box</field>
+        <field name="report_name">stock_delivery_box_grouping_module.report_delivery_by_box</field>
+        <field name="report_file">stock_delivery_box_grouping_module.report_delivery_by_box</field>
         <field name="print_report_name">'Lista De Empaque'</field>
         <field name="binding_model_id" ref="stock.model_stock_picking"/>
         <field name="binding_type">report</field>

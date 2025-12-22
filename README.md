@@ -72,7 +72,7 @@ Se implementó una solución completa para imprimir etiquetas en impresoras de r
 ## 📁 Estructura de Archivos
 
 ```text
-stock_delivery_box_grouping/
+stock_delivery_box_grouping_module/
 ├── __init__.py
 ├── __manifest__.py
 ├── security/

@@ -12,7 +12,7 @@ class ProductLabelLayout(models.TransientModel):
     def _prepare_report_data(self):
         if self.print_format == 'vehicle_roll':
             
-            xml_id = 'stock_delivery_box_grouping.report_product_vehicle_label'
+            xml_id = 'stock_delivery_box_grouping_module.report_product_vehicle_label'
             
             moves = self.move_ids
             if not moves and self._context.get('active_model') == 'stock.picking':
