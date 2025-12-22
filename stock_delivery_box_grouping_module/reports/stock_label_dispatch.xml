@@ -7,8 +7,8 @@
         <field name="model">stock.picking</field>
         <field name="report_type">qweb-pdf</field>
         <!-- RECUERDA: Ajusta el nombre del módulo si tu carpeta se llama distinto -->
-        <field name="report_name">stock_delivery_box_grouping_module.report_label_dispatch_template</field>
-        <field name="report_file">stock_delivery_box_grouping_module.report_label_dispatch_template</field>
+        <field name="report_name">stock_delivery_box_grouping.report_label_dispatch_template</field>
+        <field name="report_file">stock_delivery_box_grouping.report_label_dispatch_template</field>
         <field name="paperformat_id" ref="paperformat_label_dispatch_custom"/>
         <field name="binding_model_id" ref="stock.model_stock_picking"/>
         <field name="binding_type">report</field>

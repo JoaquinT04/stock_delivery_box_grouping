@@ -5,9 +5,9 @@
         <field name="name">Etiqueta Vehículo (55x30)</field>
         <field name="model">product.product</field>
         <field name="report_type">qweb-pdf</field>
-        <field name="report_name">stock_delivery_box_grouping_module.report_product_label_vehicle_template</field>
-        <field name="report_file">stock_delivery_box_grouping_module.report_product_label_vehicle_template</field>
-        <field name="paperformat_id" ref="stock_delivery_box_grouping_module.paperformat_product_label_vehicle"/>
+        <field name="report_name">stock_delivery_box_grouping.report_product_label_vehicle_template</field>
+        <field name="report_file">stock_delivery_box_grouping.report_product_label_vehicle_template</field>
+        <field name="paperformat_id" ref="stock_delivery_box_grouping.paperformat_product_label_vehicle"/>
     </record>
 
     <template id="report_product_label_vehicle_template">
@@ -59,7 +59,7 @@
                                                 <span t-field="product.default_code"/>
                                             </div>
                                             <!-- Nombre -->
-                                            <div style="font-family: Arial, sans-serif; font-size: 7px; font-weight: bold; text-transform: uppercase; line-height: 1; max-height: 7mm; overflow: hidden;">
+                                            <div style="font-family: Arial, sans-serif; font-size: 8px; font-weight: 900; text-transform: uppercase; line-height: 1; max-height: 7mm; overflow: hidden;">
                                                 <span t-field="product.name"/>
                                             </div>
                                         </td>

@@ -7,7 +7,7 @@
         1. Agrupación en Remitos.
         2. Etiquetas de Despacho por Caja.
     """,
-    'author': "Tu Nombre / Empresa",
+    'author': "Deglia",
     'website': "www.deglia.xyz",
     'category': 'Inventory/Delivery',
     'version': '18.0.1.0.3',
