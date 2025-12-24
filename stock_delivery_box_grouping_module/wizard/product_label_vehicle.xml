@@ -33,6 +33,7 @@
                            - Height: 28mm (2mm menos que el papel).
                            - Overflow: hidden.
                            - Page-break-after: always. 
+                           
                         -->
                         <div style="width: 55mm; height: 28mm; page-break-after: always; position: relative; overflow: hidden; background-color: white; color: black; margin: 0; padding: 0;">
                             
